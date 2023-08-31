@@ -25,7 +25,8 @@ class GitPackage extends Command
     protected $signature = 'packager:git
                             {url : The url of the git repository}
                             {vendor? : The vendor part of the namespace}
-                            {name? : The name of package for the namespace}';
+                            {name? : The name of package for the namespace}
+                            {--submodule : Add as a submodule instead just cloning}';
 
     /**
      * The console command description.
@@ -73,6 +74,7 @@ class GitPackage extends Command
         // Common variables
         $source = $this->argument('url');
         $origin = rtrim(strtolower($source), '/');
+        $submodule = !is_null($this->option('submodule'));
 
         if (is_null($this->argument('vendor')) || is_null($this->argument('name'))) {
             $this->setGitVendorAndPackage($origin);
@@ -82,7 +84,7 @@ class GitPackage extends Command
         }
 
         // Start creating the package
-        $this->info('Creating package '.$this->conveyor->vendor().'\\'.$this->conveyor->package().'...');
+        $this->info('Creating package ' . $this->conveyor->vendor() . '\\' . $this->conveyor->package() . '...');
         $this->conveyor->checkIfPackageExists();
         $this->makeProgress();
 
@@ -91,8 +93,9 @@ class GitPackage extends Command
         $this->conveyor->makeDir($this->conveyor->packagesPath());
 
         // Clone the repository
+        $gitcommand = $submodule ? 'git submodule add' : 'git clone';
         $this->info('Cloning repository...');
-        exec("git clone -q $source ".$this->conveyor->packagePath(), $output, $exit_code);
+        exec("{$gitcommand} -q {$source} " . $this->conveyor->packagePath(), $output, $exit_code);
 
         if ($exit_code != 0) {
             $this->error('Unable to clone repository');
